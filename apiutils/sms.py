@@ -1,12 +1,17 @@
 # encoding: utf-8
 
-from django.conf import settings
-
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore.request import CommonRequest
 
 
-client = AcsClient(settings.SMS_ACCESS_KEY_ID, settings.SMS_ACCESS_KEY_SECRET, 'cn-hangzhou')
+client = None
+
+
+def get_client():
+    if client is None:
+        from django.conf import settings
+        clent = AcsClient(settings.SMS_ACCESS_KEY_ID, settings.SMS_ACCESS_KEY_SECRET, 'cn-hangzhou')
+    return client
 
 
 def send_sms_batch_number(phone_numbers, sign_name, template_code, template_param, batch_size=900):
@@ -35,5 +40,5 @@ def send_sms(phone_number, sign_name, template_code, template_param=None):
     request.add_query_param('TemplateCode', template_code)
     if template_param is not None:
         request.add_query_param('TemplateParam', template_param)
-    response = client.do_action_with_exception(request)
+    response = get_client().do_action_with_exception(request)
     return response
