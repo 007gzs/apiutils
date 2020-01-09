@@ -26,3 +26,16 @@ CONSTANCE 配置::
     'VERIFY_CODE_SMS_CONTENT': ('直接发送短信以验证手机号，半小时内发送有效', '验证码上行说明文字'),
 ))
 
+settings配置::
+
+
+    
+    def async_call(func, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    SERVER_IP
+    SMS_ACCESS_KEY_ID = '阿里短信key'
+    SMS_ACCESS_KEY_SECRET = '阿里短信secret'
+    SMS_SIGNNAME_VCODE = '验证码短信签名'
+    SMS_TEMPLATE_VCODE = '验证码短信模板id'
+    SMS_TEMPLATE_VCODE_PARAM = '验证码短信模板参数明'
