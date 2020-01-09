@@ -10,7 +10,7 @@ client = None
 def get_client():
     if client is None:
         from django.conf import settings
-        clent = AcsClient(settings.SMS_ACCESS_KEY_ID, settings.SMS_ACCESS_KEY_SECRET, 'cn-hangzhou')
+        client = AcsClient(settings.SMS_ACCESS_KEY_ID, settings.SMS_ACCESS_KEY_SECRET, 'cn-hangzhou')
     return client
 
 
