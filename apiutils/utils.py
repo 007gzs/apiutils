@@ -206,7 +206,7 @@ class FileUploadTo(object):
         dirname = datetime.datetime.now().strftime(self.base_path)
         extension = os.path.splitext(filename)[1]
         data = "%s_%d" % (filename, int(time.time()))
-        file_hash = hashlib.sha1(data).hexdigest()
+        file_hash = hashlib.sha1(force_bytes(data)).hexdigest()
         filename = "%s%s" % (file_hash, extension)
         return posixpath.join(dirname, filename)
 
