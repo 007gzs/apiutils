@@ -6,7 +6,6 @@ import os
 import posixpath
 import tempfile
 import hashlib
-import time
 
 from django import forms
 from django.conf import settings
