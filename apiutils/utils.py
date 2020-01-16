@@ -196,6 +196,13 @@ class TreeModel(BaseModel):
         abstract = True
 
 
+def gen_file_name(filename, *args, **kwargs):
+    extension = os.path.splitext(filename)[1]
+    time_str = datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')
+    random_str = utility.id_generator(8, '0123456789')
+    return "%s%s%s" % (time_str, random_str, extension)
+
+
 @deconstructible
 class FileUploadTo(object):
 
@@ -204,11 +211,7 @@ class FileUploadTo(object):
 
     def __call__(self, instance, filename):
         dirname = datetime.datetime.now().strftime(self.base_path)
-        extension = os.path.splitext(filename)[1]
-        data = "%s_%d" % (filename, int(time.time()))
-        file_hash = hashlib.sha1(force_bytes(data)).hexdigest()
-        filename = "%s%s" % (file_hash, extension)
-        return posixpath.join(dirname, filename)
+        return posixpath.join(dirname, gen_file_name(filename))
 
 
 class ExportMixin(admintools.ExportMixin):
