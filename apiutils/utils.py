@@ -6,10 +6,12 @@ import os
 import posixpath
 import tempfile
 import hashlib
+import json
 
 from django import forms
 from django.conf import settings
 from django.db import models, transaction
+from django.shortcuts import render
 from django.contrib.auth import models as auth_models
 from django.utils.deconstruct import deconstructible
 from django.utils.encoding import force_bytes
@@ -187,6 +189,8 @@ class TreeModel(BaseModel):
         else:
             return self.parent.parent_codes + (self.parent_id, )
 
+    parent_codes.__doc__ = '所有层级父编码列表'
+
     @classmethod
     def get_obj_by_code_from_cache(cls, code):
         return cls.get_obj_by_unique_key_from_cache(code=code)
@@ -288,6 +292,15 @@ class APIBase(view.APIView):
     ERROR_CODE_STATUS_CODE = getattr(settings, 'ERROR_CODE_STATUS_CODE', 400)
     PARAM_ERRORS_STATUS_CODE = getattr(settings, 'PARAM_ERRORS_STATUS_CODE', 400)
     SUCCESS_WITH_CODE = getattr(settings, 'SUCCESS_WITH_CODE', True)
+    return_serializer_cls = None
+
+    @classmethod
+    def get_return_info(cls, request=None, **kwargs):
+        return None if cls.return_serializer_cls is None else get_serializer_info(cls.return_serializer_cls())
+
+    @classmethod
+    def get_return_simple(cls, request=None, **kwargs):
+        return None
 
     def get_context(self, request, *args, **kwargs):
         raise NotImplementedError
@@ -381,7 +394,6 @@ class HtmlApiView(APIBase):
         raise NotImplementedError
 
     def format_res_data(self, context, status_code=None):
-        from django.shortcuts import render
         if isinstance(context, dict):
             return render(self.request, "error.html", context)
         return Response(context, status=status_code)
@@ -391,7 +403,11 @@ class HtmlApiView(APIBase):
 
 
 class BaseSerializer(serializer.BaseSerializer):
-    pass
+
+    def build_property_field(self, field_name, model_class):
+        field_class, field_kwargs = super(BaseSerializer, self).build_property_field(field_name, model_class)
+        field_kwargs['label'] = getattr(model_class, field_name, None).__doc__
+        return field_class, field_kwargs
 
 
 def get_temp_file(content):
@@ -406,81 +422,110 @@ def get_temp_file(content):
     return filename
 
 
-@api_view(["GET"])
-@renderer_classes((StaticHTMLRenderer,))
-def generate_api_js(request):
-    # api.js?package_name=bbapi.views&ext_params=referral_code,version,device_id,channel
-    tags = ErrCode.get_tags()
-    module_exports = 'module.exports = {\n'
-    content = ''
-    content += '"use strict";\n'
-    content += "const request = require('./request')\n"
-    content += "const server = '%s'; //服务地址\n\n" % request.build_absolute_uri("/")[:-1]
+def get_list_info(serializer_obj):
+    child = serializer_obj.child
+    if hasattr(child, 'fields'):
+        return get_serializer_info(child, force_many=True)
+    return [serializer_obj.label]
 
-    module_exports += '  ERROR_CODE: ERROR_CODE'
-    content += 'const ERROR_CODE = {\n'
-    last = ''
-    for tag in tags:
-        code_data = getattr(ErrCode, tag)
-        content += '  %s: %d, // %s\n' % (tag, code_data.code, code_data.message)
-        last = ', // %s\n' % code_data.message
-    if last:
-        content = content[:-len(last)] + last[1:]
-    content += '}\n'
+
+def get_serializer_info(serializer_obj, force_many=False):
+    ret = dict()
+    for field_name, field in serializer_obj.fields.items():
+        if hasattr(field, 'fields'):
+            ret[field_name] = get_serializer_info(field)
+        elif hasattr(field, 'child'):
+            ret[field_name] = get_list_info(field)
+        elif hasattr(field, 'child_relation'):
+            ret[field_name] = [field.child_relation.label]
+        else:
+            ret[field_name] = field.label
+    return [ret] if force_many else ret
+
+
+def get_api_info(request):
+    # api.js?ext_params=referral_code,version,device_id,channel
+
     ext_params_str = request.GET.get("ext_params", None)
     if ext_params_str is not None:
         ext_params = set(ext_params_str.split(','))
     else:
         ext_params = set([k for k, v in APIBase.Meta.param_fields])
-    views = common_view.get_view_list()
-    for v in views:
+
+    server = request.build_absolute_uri("/")[:-1]
+    error_codes = list()
+
+    for tag in ErrCode.get_tags():
+        code_data = getattr(ErrCode, tag)
+        error_codes.append({'key': tag, 'code': code_data.code, 'message': code_data.message})
+
+    apis = list()
+    for v in common_view.get_view_list():
         if issubclass(v['viewclass'], (TextApiView, HtmlApiView, AdminApi)):
             continue
-        func_name = v['url'].replace('/', '_').strip('_')
-        str_args = ''
-        str_data = '\n'
         hasfile = False
         post = False
         length = 0
-        count = 0
+        no_len_count = 0
+        params = list()
         for param, field in v['params'].items():
             if isinstance(field, (fields.FileField, fields.ImageField)):
                 hasfile = True
                 post = True
             if param in ext_params:
                 continue
-            if param == 'password':
+            if param in ('pass', 'password'):
                 post = True
             if isinstance(field, fields.CharField):
                 if field.max_length is None:
-                    count += 1
+                    no_len_count += 1
                 else:
                     length += field.max_length
-            if str_args == '':
-                str_args = param
-            else:
-                str_args += ', %s' % param
-            str_data += "      %s: %s,\n" % (param, param)
-        content_type = 'multipart/form-data' if hasfile else 'application/x-www-form-urlencoded'
-        str_data = str_data[:-2]
-        if len(str_data) > 1:
-            str_data += "\n    "
-        if count > 3 or length > 200:
+            params.append({
+                'field': param,
+                'name': field.help_text,
+                'info': field.field_info,
+                'default': '%s' % field.default,
+                'omit': '%s' % field.omit,
+                'required': field.required,
+                'type': field.type_name
+            })
+        if no_len_count > 3 or length > 200:
             post = True
-        module_exports += ",\n  %s: %s" % (func_name, func_name)
-        content += '''
-// %s
-const %s = function({%s} = {}) {
-  return request({
-    server: server,
-    path: '%s',
-    method: '%s',
-    data: {%s},
-    header: { 'Content-Type': '%s' }
-  })
-}
-''' % (v['name'], func_name, str_args, v['url'], 'POST' if post else 'GET', str_data, content_type)
-    content += '\n'
-    module_exports += "\n}"
-    content += module_exports
-    return Response(content.encode("utf8"), content_type='text/plain;charset=utf-8')
+
+        api_info = {
+            'name': v['name'],
+            'url': v['url'],
+            'ul_name': v['url'].replace('/', '_').strip('_'),
+            'params': params,
+            'suggest_method': 'POST' if post else 'GET',
+            'content_type': 'multipart/form-data' if hasfile else 'application/x-www-form-urlencoded',
+        }
+
+        for key in ('return_info', 'return_simple'):
+            value = getattr(v['viewclass'], 'get_%s' % key, None)
+            if callable(value):
+                value = value(request=request)
+            if isinstance(value, (dict, list)):
+                if v['viewclass'].SUCCESS_WITH_CODE:
+                    if not isinstance(value, dict) or 'code' not in value:
+                        value = v['viewclass'].get_default_context(data=value)
+                value = json.dumps(value, ensure_ascii=False, indent=2)
+            api_info[key] = value
+        apis.append(api_info)
+    return {
+        'server': server,
+        'ext_params': list(ext_params),
+        'error_codes': error_codes,
+        'apis': apis
+    }
+
+
+@api_view(["GET"])
+@renderer_classes((StaticHTMLRenderer,))
+def generate_api_info(request, template_name='apiutils/api_info.js', content_type='text/javascript;charset=utf-8'):
+    info = get_api_info(request)
+    if template_name is None:
+        return Response(json.dumps(info, ensure_ascii=False).encode("utf8"), content_type='text/json;charset=utf-8')
+    else:
+        return render(request, template_name, context=info, content_type=content_type)
