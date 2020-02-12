@@ -344,6 +344,16 @@ class PageMixin(object):
         ('page_size', fields.IntegerField(help_text='每页条数', required=False, omit=100)),
     )
 
+    @classmethod
+    def get_page_return_info(cls, data_serializer_cls):
+        return {
+            'page_size': '每页条数',
+            'list': utils.get_serializer_info(data_serializer_cls(), force_many=True),
+            'page': '页码',
+            'total_page': '总页数',
+            'total_data': '数据总条数'
+        }
+
     def get_page_context(self, request, queryset, serializer_cls):
         page_size = request.params.page_size
         if page_size <= 0 or page_size > self.PAGE_SIZE_MAX:
