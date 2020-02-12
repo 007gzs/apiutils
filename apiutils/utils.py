@@ -348,7 +348,7 @@ class PageMixin(object):
     def get_page_return_info(cls, data_serializer_cls):
         return {
             'page_size': '每页条数',
-            'list': utils.get_serializer_info(data_serializer_cls(), force_many=True),
+            'list': get_serializer_info(data_serializer_cls(), force_many=True),
             'page': '页码',
             'total_page': '总页数',
             'total_data': '数据总条数'
