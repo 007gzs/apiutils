@@ -30,7 +30,7 @@ with open('requirements.txt') as f:
 
 setup(
     name='apiutils',
-    version='1.0.7',
+    version='1.0.8',
     keywords='apiutils utils',
     description='apiutils',
     long_description=long_description,
