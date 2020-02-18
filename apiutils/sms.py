@@ -1,6 +1,8 @@
 # encoding: utf-8
 from __future__ import absolute_import, unicode_literals
 
+import json
+
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore.request import CommonRequest
 
@@ -43,4 +45,7 @@ def send_sms(phone_number, sign_name, template_code, template_param=None):
     if template_param is not None:
         request.add_query_param('TemplateParam', template_param)
     response = get_client().do_action_with_exception(request)
-    return response
+    try:
+        return json.loads(response)
+    except Exception:
+        return response
