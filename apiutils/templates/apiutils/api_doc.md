@@ -24,7 +24,7 @@
 
 | 字段名 | 说明 | 类型 | 是否必填 | 默认值 | 其他说明 |
 | ---- | ---- | ---- | ---- | ---- | ---- |
-{% for param in api.params %}| {% if param.required %}**`{{ param.field }}`**{% else %}`{{ param.field }}`{% endif %} | {{ param.name }} | {{ param.type_name }} | {% if param.required %}是{% else %}否{% endif %} | {% if param.default and param.default != '<empty>' %}{{ param.default }}{% else %}{{ param.omit }}{% endif %} | {{ param.info }} |
+{% for param in api.params %}| {% if param.required %}**`{{ param.field }}`**{% else %}`{{ param.field }}`{% endif %} | {{ param.name }} | {{ param.type }} | {% if param.required %}是{% else %}否{% endif %} | {% if param.default and param.default != '<empty>' %}{{ param.default }}{% else %}{{ param.omit }}{% endif %} | {{ param.info }} |
 {% endfor %}{% endif %}
 
 {% if api.return_simple %}

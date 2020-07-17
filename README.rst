@@ -17,13 +17,13 @@ CONSTANCE 配置::
         ('SL_LONG_TIME_MAIL_MIN_SECONDS', (20, '函数耗时mail最小时间')),
         ('SL_LONG_TIME_COUNT_MIN_SECONDS', (10, '函数耗时记录到长时间统计')),
 
-        'VERIFY_CODE_MOBILE_COUNT': (10, '每个手机号每天可发送次数'),
-        'VERIFY_CODE_WHITE_LIST_MOBILES': ('13800138000', '白名单手机号(逗号隔开)'),
-        'VERIFY_CODE_WHITE_LIST_CODE': ('6379', '白名单验证码'),
-        'VERIFY_CODE_SEND_EXPIRE_SECONDS': (60, '验证码发送限制秒数, 成功发送验证码后再次请求将在该时间过后才会重新发送'),
-        'VERIFY_CODE_EXPIRE_SECONDS': (1800, '验证码默认过期秒数'),
-        'VERIFY_CODE_MAX_TIMES': (10, '验证码可验证次数, 达到验证码次数后重新发送才能继续验证'),
-        'VERIFY_CODE_SMS_CONTENT': ('直接发送短信以验证手机号，半小时内发送有效', '验证码上行说明文字'),
+        ('VERIFY_CODE_MOBILE_COUNT', (10, '每个手机号每天可发送次数')),
+        ('VERIFY_CODE_WHITE_LIST_MOBILES', ('13800138000', '白名单手机号(逗号隔开)')),
+        ('VERIFY_CODE_WHITE_LIST_CODE', ('6379', '白名单验证码')),
+        ('VERIFY_CODE_SEND_EXPIRE_SECONDS', (60, '验证码发送限制秒数, 成功发送验证码后再次请求将在该时间过后才会重新发送')),
+        ('VERIFY_CODE_EXPIRE_SECONDS', (1800, '验证码默认过期秒数')),
+        ('VERIFY_CODE_MAX_TIMES', (10, '验证码可验证次数, 达到验证码次数后重新发送才能继续验证')),
+        ('VERIFY_CODE_SMS_CONTENT', ('直接发送短信以验证手机号，半小时内发送有效', '验证码上行说明文字')),
     ))
 
 settings配置::
