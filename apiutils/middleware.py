@@ -45,7 +45,7 @@ class TimeLogMiddleware(MiddlewareMixin):
             if exec_time > config.SL_LONG_TIME_MAIL_MIN_SECONDS:
                 skip_path = config.SL_CPROFILE_LOG_SKIP_PATH.split(',')
                 if request.path not in skip_path:
-                     contents = [
+                    contents = [
                         "<table>",
                         "<tr><td>path</td><td>%s</td>" % request.path,
                         "<tr><td>time</td><td>%fs</td>" % exec_time,
@@ -57,6 +57,7 @@ class TimeLogMiddleware(MiddlewareMixin):
                     for k, v in request.META.items():
                         contents.append("<tr><td>meta.%s</td><td>%s</td>" % (k, v))
                     contents.append("</table>")
+                    subject = '长时间请求 %fs' % exec_time
                     content = "\n".join(contents)
                     utility.sendEmail(subject, settings.ADMINS, content)
             if exec_time > config.SL_CPROFILE_LOG_MIN_SECONDS:
