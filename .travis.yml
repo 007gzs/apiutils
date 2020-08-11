@@ -5,8 +5,8 @@ sudo: false
 
 matrix:
   include:
-    - env: TOX_ENV=py27
-      python: 2.7
+    # - env: TOX_ENV=py27
+    #   python: 2.7
     - env: TOX_ENV=py35
       python: 3.5
     - env: TOX_ENV=py36
@@ -15,8 +15,8 @@ matrix:
       python: 3.7
     - env: TOX_ENV=py38
       python: 3.8
-    - env: TOX_ENV=pypy
-      python: "pypy"
+    # - env: TOX_ENV=pypy
+    #   python: "pypy"
     - env: TOX_ENV=pypy3
       python: "pypy3"
 
