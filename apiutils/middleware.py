@@ -45,11 +45,19 @@ class TimeLogMiddleware(MiddlewareMixin):
             if exec_time > config.SL_LONG_TIME_MAIL_MIN_SECONDS:
                 skip_path = config.SL_CPROFILE_LOG_SKIP_PATH.split(',')
                 if request.path not in skip_path:
-                    content = 'time: %fs <br> path:%s <br> querystring:%s <br> request:<pre>%s</pre>' % (
-                        exec_time, request.path, request.META['QUERY_STRING'], request
-                    )
-                    content += '<br><p>IP:%s (%s)</p>' % (settings.SERVER_IP, datetime.datetime.now())
-                    subject = u'长时间请求'
+                     contents = [
+                        "<table>",
+                        "<tr><td>path</td><td>%s</td>" % request.path,
+                        "<tr><td>time</td><td>%fs</td>" % exec_time,
+                        "<tr><td>server_ip</td><td>%s</td>" % settings.SERVER_IP,
+                        "<tr><td>server_time</td><td>%s</td>" % datetime.datetime.now()
+                    ]
+                    for k, v in request.POST.items():
+                        contents.append("<tr><td>post.%s</td><td>%s</td>" % (k, v))
+                    for k, v in request.META.items():
+                        contents.append("<tr><td>meta.%s</td><td>%s</td>" % (k, v))
+                    contents.append("</table>")
+                    content = "\n".join(contents)
                     utility.sendEmail(subject, settings.ADMINS, content)
             if exec_time > config.SL_CPROFILE_LOG_MIN_SECONDS:
                 self.logger.info("stat exec_time: time: %fs  path:%s  querystring:%s" % (
